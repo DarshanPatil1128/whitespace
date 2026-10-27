@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Whitespace — account opportunity finder</title>
+  <meta name="description" content="Find and rank cross-sell opportunities across an account base using peer adoption, product affinity, fit, and engagement — with a plain-English reason for every play." />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23af52de'/%3E%3Cg fill='white'%3E%3Crect x='7' y='7' width='8' height='8' rx='2'/%3E%3Crect x='17' y='7' width='8' height='8' rx='2' opacity='.45'/%3E%3Crect x='7' y='17' width='8' height='8' rx='2' opacity='.45'/%3E%3Crect x='17' y='17' width='8' height='8' rx='2'/%3E%3C/g%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="kit.css" />
+  <link rel="stylesheet" href="app.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar__in">
+      <a class="topbar__back" href="https://darshanpatil.me/#work">← Darshan Patil</a>
+      <span class="topbar__name"><span class="logo" style="background:linear-gradient(135deg,#af52de,#5e5ce6)">W</span>Whitespace</span>
+      <nav class="topbar__links">
+        <a href="#method">Scoring model</a>
+        <a href="https://github.com/DarshanPatil1128/whitespace" target="_blank" rel="noopener">GitHub</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="page">
+    <section class="hero">
+      <p class="hero__eyebrow" style="color:var(--c4)">Account opportunity finder</p>
+      <h1>Find the next deal hiding in your accounts.</h1>
+      <p>Whitespace scores every account-and-product combination a customer doesn’t own yet — using what similar
+        customers bought, what tends to be bought together, fit, and engagement — then ranks the plays and says why.</p>
+      <div class="hero__actions no-print">
+        <label class="btn file-btn">Upload accounts CSV<input type="file" id="file" accept=".csv,text/csv" /></label>
+        <button class="btn btn--ghost" id="dlSample">Download sample CSV</button>
+        <button class="btn btn--ghost" id="export">Export plays</button>
+        <span class="note" id="dataNote">Showing 40 fictional accounts · files stay in your browser</span>
+      </div>
+    </section>
+
+    <div class="grid grid--side">
+      <aside class="card card--sticky no-print" id="controls">
+        <p class="section-label">Filter</p>
+        <div class="field"><div class="field__row"><label for="fInd">Industry</label></div><select class="select" id="fInd"></select></div>
+        <div class="field"><div class="field__row"><label for="fReg">Region</label></div><select class="select" id="fReg"></select></div>
+        <div class="field">
+          <div class="field__row"><label for="minScore">Minimum score</label><output for="minScore"></output></div>
+          <input type="range" id="minScore" min="0" max="90" value="0" />
+        </div>
+
+        <p class="section-label">Scoring weights</p>
+        <div class="field"><div class="field__row"><label for="wPeer">Peer adoption</label><output for="wPeer"></output></div><input type="range" id="wPeer" min="0" max="100" value="35" /></div>
+        <div class="field"><div class="field__row"><label for="wAff">Product affinity</label><output for="wAff"></output></div><input type="range" id="wAff" min="0" max="100" value="30" /></div>
+        <div class="field"><div class="field__row"><label for="wFit">Size &amp; fit</label><output for="wFit"></output></div><input type="range" id="wFit" min="0" max="100" value="15" /></div>
+        <div class="field"><div class="field__row"><label for="wEng">Engagement</label><output for="wEng"></output></div><input type="range" id="wEng" min="0" max="100" value="20" /></div>
+        <p class="note">Weights are normalized to 100%.</p>
+      </aside>
+
+      <div class="stack">
+        <div class="kpis">
+          <div class="kpi kpi--hero kpi--purple"><div class="kpi__label">Whitespace value</div><div class="kpi__value" id="kVal">–</div><div class="kpi__hint" id="kValHint"></div></div>
+          <div class="kpi"><div class="kpi__label">Open plays</div><div class="kpi__value" id="kPlays">–</div><div class="kpi__hint" id="kPlaysHint"></div></div>
+          <div class="kpi"><div class="kpi__label">High-propensity plays</div><div class="kpi__value" id="kHigh">–</div><div class="kpi__hint">score 70 or above</div></div>
+          <div class="kpi"><div class="kpi__label">Avg. products / account</div><div class="kpi__value" id="kDepth">–</div><div class="kpi__hint" id="kDepthHint"></div></div>
+        </div>
+
+        <div class="card">
+          <div class="card__head">
+            <span class="card__title">Top plays</span>
+            <span class="card__sub">Ranked by propensity × estimated deal size</span>
+          </div>
+          <div class="plays" id="plays"></div>
+        </div>
+
+        <div class="card">
+          <div class="card__head">
+            <span class="card__title">Whitespace map</span>
+            <div class="seg" id="rowsSeg" role="group" aria-label="Rows to show"><button data-v="15" aria-pressed="true">Top 15</button><button data-v="999">All</button></div>
+          </div>
+          <div class="chart" id="map"></div>
+          <div class="legend"><span><i style="background:var(--owned)"></i>Already owns</span><span><i class="grad"></i>Propensity to buy, low → high</span></div>
+        </div>
+
+        <div class="grid grid--2 grid--wide-left">
+          <div class="card">
+            <div class="card__head"><span class="card__title">What gets bought together</span><span class="card__sub">Lift: how much owning the row raises the odds of owning the column</span></div>
+            <div class="chart" id="lift"></div>
+          </div>
+          <div class="card">
+            <div class="card__head"><span class="card__title">Whitespace by product</span><span class="card__sub">Estimated value of open plays</span></div>
+            <div class="chart" id="byProduct"></div>
+          </div>
+        </div>
+
+        <div class="card" id="method">
+          <div class="card__head"><span class="card__title">Scoring model</span></div>
+          <div class="method">
+            <div><h4>Peer adoption</h4><p>Share of other accounts in the same industry that already own the product. If most hospitals bought it, the next hospital probably needs it too.</p></div>
+            <div><h4>Product affinity</h4><p>Lift from co-ownership across the whole base: P(product | owns X) ÷ P(product). Uses the strongest signal among products the account already owns.</p></div>
+            <div><h4>Size &amp; fit</h4><p>Log-scaled employee count, so bigger organizations score higher without drowning out everyone else.</p></div>
+            <div><h4>Engagement</h4><p>Engagement score decayed by days since the last touch. A warm account converts faster than a cold one.</p></div>
+          </div>
+          <p class="note" style="margin-top:14px">CSV columns: <code>account, industry, region, employees, engagement, last_touch_days</code> plus one 0/1 column per product
+            (<code>data_platform, ai_assistants, automation, security, hybrid_cloud, observability</code>). Deal sizes use illustrative list prices scaled by company size.</p>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <span>Built by <a href="https://darshanpatil.me">Darshan Patil</a></span>
+    <span>Fictional accounts · no data leaves your browser.</span>
+  </footer>
+
+  <script src="kit.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
